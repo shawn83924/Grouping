@@ -2,40 +2,74 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class Grouping : MonoBehaviour
 {
+    /// <summary>
+    /// 主Camera
+    /// </summary>
     Camera Cam;
-    //Square Positions on Screen, [0] is Up-Right , [1] is Up-Left , [2] is Down-Left , [3] is Down-Right
-    /*
-     [1]--[0]
-      |    |
-      |    |
-     [2]--[3]
-     */ 
+    /// <summary>
+    /// Square Positions on Screen, [0] is Up-Right , [1] is Up-Left , [2] is Down-Left , [3] is Down-Right
+    /// </summary>
+    /// [1]--[0]
+    ///  |    |
+    ///  |    |
+    /// [2]--[3]
     Vector3[] ScreenPositions = new Vector3[4];
-    Vector3 MouseDownPosition;//滑鼠按下的點
-    Vector3 MouseUpPosition;//滑鼠放開的點
-    //視錐4個近點(在 NearClipPlane上)
+    /// <summary>
+    /// 滑鼠按下的點
+    /// </summary>
+    Vector3 MouseDownPosition;
+    /// <summary>
+    /// 滑鼠放開的點
+    /// </summary>
+    Vector3 MouseUpPosition;
+    /// <summary>
+    /// 視錐4個近點(在 NearClipPlane上)
+    /// </summary>
     Vector3[] NearPositions = new Vector3[4];
-    //視錐4個遠點(在 FarClipPlane 上)
+    /// <summary>
+    /// 視錐4個遠點(在 FarClipPlane 上)
+    /// </summary>
     Vector3[] FarPositions = new Vector3[4];
-    //視錐上的6個Plane
-    //Ordering: [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
+    /// <summary>
+    /// 視錐上的6個Plane, [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
+    /// </summary>
     Plane[] FrustumPlanes = new Plane[6];
-
-
+    /// <summary>
+    /// 要被Grouping的物件
+    /// </summary>
     public Collider[] Objects;
+    /// <summary>
+    /// Grouping 物件的初始 Material
+    /// </summary>
     public Material DefaultMaterial;
+    /// <summary>
+    /// Grouping 物件被選擇時的 Material
+    /// </summary>
     public Material SelectedMaterial;
+    /// <summary>
+    /// Drag 時的 Outline
+    /// </summary>
     public LineRenderer DragOutline;
+    /// <summary>
+    /// 設定 DragOutline 的顏色
+    /// </summary>
+    public Color OutlineColor { set { DragOutline.material.color = value; } }
+    /// <summary>
+    /// Drag 時填充 Outline 的 Image
+    /// </summary>
     public RectTransform DragFill;
-    UnityEvent GroupEvent;
+    /// <summary>
+    /// 設定 DragFill 的顏色
+    /// </summary>
+    public Color FillColor { set { DragFill.GetComponent<Image>().color = value; } }
     void Start()
     {
         Cam = Camera.main;
         for (int i = 0; i < Objects.Length; i++) { Objects[i].GetComponent<MeshRenderer>().material = DefaultMaterial; }
-
     }
 
 
@@ -53,11 +87,11 @@ public class Grouping : MonoBehaviour
         {
             //得出螢幕4點
             SetScreenRange(MouseDownPosition, Input.mousePosition);
-            //由螢幕4點得出空間4點
+            //用螢幕4點得出NearPlane上的4點
             SetPlanePosition(Cam.nearClipPlane, ref NearPositions);
-            //用空間4點畫出框來
+            //用NearPlane上的4點畫出框來
             for (int i = 0; i < NearPositions.Length; i++) { DragOutline.SetPosition(i, NearPositions[i]); }
-            //用螢幕4點填滿框
+            //用NearPlane上的4點填滿框
             DragFill.anchoredPosition = Vector2.zero;
             for (int i = 0; i < ScreenPositions.Length; i++) 
             {
@@ -123,6 +157,7 @@ public class Grouping : MonoBehaviour
     /// <returns></returns>
     bool SetFroupFrustum() 
     {
+        SetScreenRange(MouseDownPosition, MouseUpPosition);
         //檢查螢幕4點是否集中在一起或一直線
         if (ScreenPositions[0] == ScreenPositions[1] || ScreenPositions[1] == ScreenPositions[2])
         {
@@ -141,6 +176,11 @@ public class Grouping : MonoBehaviour
         //得出空間中錐體後就回傳True
         return true;
     }
+    /// <summary>
+    /// 用螢幕4點來設定 NearPlane 或 FarPlane
+    /// </summary>
+    /// <param name="PlaneDistance"></param>
+    /// <param name="PlanePositions"></param>
     void SetPlanePosition(float PlaneDistance, ref Vector3[] PlanePositions)
     {
         for (int i = 0; i < ScreenPositions.Length; i++) 
