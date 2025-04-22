@@ -136,7 +136,7 @@ public class GroupingManager : MonoBehaviour
             MouseUpPosition = Input.mousePosition;
 
             //得出空間中8個錐體點，如果得不出就直接返回
-            if (!SetFroupFrustum())
+            if (!SetGroupFrustum())
             {
                 return;
             }
@@ -178,7 +178,7 @@ public class GroupingManager : MonoBehaviour
     /// 將螢幕上4點轉為空間視錐的8點，如果成功轉化就回傳true，不成功(螢幕四點為一直線或集中在一起)就回傳false
     /// </summary>
     /// <returns></returns>
-    bool SetFroupFrustum()
+    bool SetGroupFrustum()
     {
         SetScreenRange(MouseDownPosition, MouseUpPosition);
         //檢查螢幕4點是否集中在一起或一直線
