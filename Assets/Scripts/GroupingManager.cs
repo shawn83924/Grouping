@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Drawing;
 using UnityEngine;
 
 public class GroupingManager : MonoBehaviour
@@ -53,10 +54,15 @@ public class GroupingManager : MonoBehaviour
     /// 視錐上的6個Plane, [0] = Left, [1] = Right, [2] = Down, [3] = Up, [4] = Near, [5] = Far
     /// </summary>
     private Plane[] FrustumPlanes = new Plane[6];
+    [SerializeField]
+    private Color outlineColor;
+    [SerializeField]
+    private float outlineThickness;
     /// <summary>
     /// 要被Grouping的物件
     /// </summary>
-    public List<GroupingObj> Objects;
+    [HideInInspector]
+    public List<GroupingObj> Objects = new();
     /// <summary>
     /// Grouping 物件的初始 Material
     /// </summary>
@@ -65,18 +71,6 @@ public class GroupingManager : MonoBehaviour
     /// Grouping 物件被選擇時的 Material
     /// </summary>
     public Material SelectedMaterial;
-    /// <summary>
-    /// Drag 時的 Outline
-    /// </summary>
-    public LineRenderer DragOutline;
-
-    /// <summary>
-    /// 設定 DragOutline 的顏色
-    /// </summary>
-    public Color OutlineColor
-    {
-        set => DragOutline.material.color = value;
-    }
     /// <summary>
     /// Drag 時填充 Outline 的 Image
     /// </summary>
@@ -92,14 +86,12 @@ public class GroupingManager : MonoBehaviour
         Cam = Camera.main;
     }
 
-
     private void Update()
     {
         //按下左鍵時,紀錄按下時的螢幕位置
         if (Input.GetMouseButtonDown(0))
         {
             MouseDownPosition = Input.mousePosition;
-            DragOutline.gameObject.SetActive(true);
             DragFill.gameObject.SetActive(true);
         }
         //持續按壓時，畫出外框
@@ -110,7 +102,13 @@ public class GroupingManager : MonoBehaviour
             //用螢幕4點得出NearPlane上的4點
             SetPlanePosition(Cam.nearClipPlane, NearPositions);
             //用NearPlane上的4點畫出框來
-            for (var i = 0; i < NearPositions.Length; i++) { DragOutline.SetPosition(i, NearPositions[i]); }
+            DrawNearRectOutline(ScreenPositions, outlineColor);
+            /*
+            for (var i = 0; i < NearPositions.Length; i++)
+            {
+                DragOutline.SetPosition(i, NearPositions[i]);
+            }
+            */
             //用NearPlane上的4點填滿框
             DragFill.anchoredPosition = Vector2.zero;
             for (var i = 0; i < ScreenPositions.Length; i++)
@@ -126,7 +124,6 @@ public class GroupingManager : MonoBehaviour
         //左鍵放開時，記錄放開時的螢幕位置
         if (Input.GetMouseButtonUp(0))
         {
-            DragOutline.gameObject.SetActive(false);
             DragFill.gameObject.SetActive(false);
             //先Reset 所有方塊的Material
             foreach (var obj in Objects)
@@ -213,4 +210,21 @@ public class GroupingManager : MonoBehaviour
         }
     }
 
+    private void DrawNearRectOutline(Vector3[] positions, Color color)
+    {
+        var draw = Draw.ingame;
+        using (draw.InScreenSpace(Cam))
+        {
+            using (draw.WithLineWidth(outlineThickness))
+            {
+                var rectx = positions[1].x;
+                var recty = positions[2].y;
+                var rectwidth = positions[0].x - positions[1].x;
+                var rectheight = positions[0].y - positions[3].y;
+                draw.xy.WireRectangle(
+                    new Rect(rectx, recty, rectwidth, rectheight),
+                    color);
+            }
+        }
+    }
 }
